@@ -41,7 +41,7 @@ public class InfoflowResults {
 	 * Class for modeling information flowing out of a specific source
 	 * @author Steven Arzt
 	 */
-	public class SourceInfo {
+	public class SourceInfo implements Comparable<SourceInfo> {
 		private final Value source;
 		private final Stmt context;
 		private final Object userData;
@@ -118,13 +118,18 @@ public class InfoflowResults {
 			return this.source.equals(si.source)
 					&& this.context.equals(si.context);
 		}
+		
+		@Override
+		public int compareTo(SourceInfo other) {
+			return (this.toString() + " " + super.toString()).compareTo(other.toString() + " " + super.toString());			
+		}
 	}
 	
 	/**
 	 * Class for modeling information flowing into a specific source
 	 * @author Steven Arzt
 	 */
-	public class SinkInfo {
+	public class SinkInfo implements Comparable<SinkInfo>  {
 		private final Value sink;
 		private final Stmt context;
 		
@@ -168,6 +173,11 @@ public class InfoflowResults {
 			SinkInfo si = (SinkInfo) o;
 			return this.sink.equals(si.sink)
 					&& this.context.equals(si.context);
+		}
+		
+		@Override
+		public int compareTo(SinkInfo other) {
+			return (this.toString() + " " + super.toString()).compareTo(other.toString() + " " + super.toString());			
 		}
 	}
 	
