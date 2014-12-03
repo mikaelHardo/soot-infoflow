@@ -62,7 +62,6 @@ import soot.jimple.infoflow.solver.fastSolver.InfoflowSolver;
 import soot.jimple.infoflow.source.ISourceSinkManager;
 import soot.jimple.infoflow.util.IntentTag;
 import soot.jimple.infoflow.util.SootMethodRepresentationParser;
-import soot.jimple.infoflow.util.SystemClassHandler;
 import soot.jimple.internal.AbstractInvokeExpr;
 import soot.jimple.toolkits.callgraph.ReachableMethods;
 import soot.options.Options;
@@ -434,8 +433,8 @@ public class Infoflow extends AbstractInfoflow {
 			}
 		
 		if (!forwardProblem.hasInitialSeeds() || sinkCount == 0){
-			logger.error("No sources or sinks found, aborting analysis");
-			return;
+			logger.warn("No sources or sinks found, aborting analysis");
+			//return;
 		}
 
 		logger.info("Source lookup done, found {} sources and {} sinks.", forwardProblem.getInitialSeeds().size(),
@@ -609,14 +608,19 @@ public class Infoflow extends AbstractInfoflow {
 				if (sourcesSinks.isSink(s, iCfg)) {
 		            logger.info("Sink found: {}", u);
 		            
+		            // If we find an Intent sink, we need to look for the ID inserted by the app transformer.
+		            // We know, that the ID inserted by the app transformer is on the line before, therefore we use the "old_s" var,
+		            // which holds the statement before the current.
 		            if (isIntentSink(s)) {
 		            	String emph = "\u001B[31m";
 		            	String ansi_reset = "\u001B[0m";
 		            	logger.info(emph + "INTENT SINK: " + ansi_reset + s.toString());
 		            	logger.info(emph + "PREV: " + ansi_reset + old_s.toString());
-		            	
+
+		            	// We get the Intent ID (it is the first parameter of the statement)
 		            	String intentID = extractIntentID(old_s); 
 		            	logger.info(emph + "IntentID: " + ansi_reset + intentID);
+		            	// We add the Intent ID to the statement as a Tag, so that we can retrieve it later (when we write the XML)
 		            	s.addTag(new IntentTag("IntentID", intentID));
 		            	logger.info(emph + "IntentID: " + ansi_reset + ((IntentTag) s.getTag("IntentID")).getIntentID());
 		            }
@@ -628,8 +632,8 @@ public class Infoflow extends AbstractInfoflow {
 			}
 			
 		}
-		return sinkCount;
 		
+		return sinkCount;
 	}
 	
 	public static boolean isIntentSink(Stmt stmt) {
@@ -641,6 +645,9 @@ public class Infoflow extends AbstractInfoflow {
 		SootMethod meth = ie.getMethod();
 		
 		Boolean isCorrectMethod = false;
+		
+		// We check if the sink we found is one of the methods we look for.
+		// We only find sinks that are defined in the Sources & Sinks file. Therefore we dont need a better check here.
 		
 		ArrayList<String> methods = new ArrayList<String>();
 		methods.add("startActivity");
@@ -661,9 +668,7 @@ public class Infoflow extends AbstractInfoflow {
 			return false;
 		}
 		
-		SootClass android_content_Context = Scene.v().getSootClass("android.content.Context");
-		
-		return ((new Hierarchy()).isClassSuperclassOfIncluding(android_content_Context, meth.getDeclaringClass()));
+		return true;
 	}
 	
 	public static boolean isIntentResultSink(Stmt stmt) {
